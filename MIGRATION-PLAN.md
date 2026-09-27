@@ -9,6 +9,8 @@ Reusable plan for moving manually managed Compose applications to GitHub and Doc
 - Add GitHub Topics such as `app` and an optional service category.
 - Keep application source, Compose files, deployment config, and non-secret examples in the app repository.
 - Keep runtime data, certificates, database files, and real secret files on the VPS.
+- Prefer named Docker volumes for writable application state. Treat repository-relative writable bind mounts as migration hazards because Doco-CD may deploy each revision from a different managed clone or artifact directory.
+- Current conversion policy: Authentik uses `data`, `certs`, and `custom_templates` volumes; nginx-proxy uses shared `conf`, `vhost`, `html`, `certs`, `htpasswd`, and `acme` volumes; Plik, PrivateBin, and music-together use a `data` volume.
 - Use forks when the deployment starts from an upstream repository. Keep `origin` pointed at the organization fork and `upstream` pointed at the original project.
 - Do not use submodules initially. Doco-CD can deploy each app repository independently; this keeps ownership, rollback, and upstream synchronization clear.
 
@@ -28,7 +30,7 @@ Use `secrets.env` as the VPS-only file name. It is not a Doco-CD-only convention
 ## Repository preparation
 
 1. Decide whether the app is production and record its current Compose project name.
-2. Identify every named volume, bind mount, external network, host port, image, and service-level `env_file`.
+2. Identify every named volume, bind mount, external network, host port, image, and service-level `env_file`. Mark each bind mount as read-only configuration, intentional absolute host storage, or writable repository-relative state.
 3. Add `.gitignore` before the first commit.
 4. Add `.doco-cd.yml` with the existing project name, working directory, and Compose files.
 5. Add `secrets.env.example` without real values.
@@ -64,9 +66,13 @@ Perform one app at a time during a maintenance window.
 5. Enable its webhook only after the controller endpoint is reachable.
 6. Trigger an initial clone/deployment. Do not delete the old app directory or volumes.
 7. Stop the old Compose project with `docker compose down`; never use `down -v`.
-8. Locate the Doco-CD managed clone. Copy the real `secrets.env` and every bind-mounted runtime directory into the matching working directory. Preserve ownership, permissions, and symlinks.
-9. Re-run the deployment. Keep the exact Compose project `name` so existing named volumes and networks are reused.
-10. Verify container names, mounts, volumes, networks, ports, health checks, logs, and application data.
+8. Locate the Doco-CD managed clone. Copy only required read-only/configuration files into it. Do not copy persistent data into the clone when the Compose file uses named volumes.
+9. Create or identify the named volumes and migrate old bind-mounted data into them before starting the new project:
+   - `docker volume create <project>_<volume>`
+   - `docker run --rm -v <project>_<volume>:/target -v /old/path:/source:ro alpine sh -c 'cp -a /source/. /target/'`
+   - preserve ownership, permissions, symlinks, and database consistency
+10. Re-run the deployment. Keep the exact Compose project `name` so existing named volumes and networks are reused.
+11. Verify container names, mounts, volumes, networks, ports, health checks, logs, and application data.
 11. Test restart behavior and one restore/read operation where practical.
 12. Keep the old directory and backup untouched until the observation period ends.
 13. Set the app poll interval to `300` and verify a test commit through webhook and fallback poll.
@@ -75,8 +81,11 @@ Perform one app at a time during a maintenance window.
 
 - Named volumes are reused only when the Compose project and volume names remain unchanged.
 - External volumes and networks must already exist on the VPS; Doco-CD should not recreate them under a new name.
-- Relative bind mounts resolve below Doco-CD's managed clone, not the old checkout.
-- Copy bind-mounted data before the first production deployment, not after an empty container starts.
+- Relative bind mounts resolve below Doco-CD's managed clone, not the old checkout, and may point at a new revision-specific directory after an update.
+- Prefer named volumes for writable state; migrate old bind-mounted data into the named volume before the first production deployment.
+- Keep read-only repository configuration as bind mounts when it should change with Git commits.
+- Keep intentional absolute host paths, such as Nextcloud's data directory or Docker sockets, as bind mounts and document their host-side prerequisites.
+- Do not convert read-only repository configuration binds such as `prometheus.yml`, `promtail.yml`, Grafana provisioning, `plikd.cfg`, `conf.php`, or `nginx.tmpl`; those should follow Git revisions.
 - Never remove volumes during migration. Image pruning can be disabled during initial cutover.
 - For databases, prefer a database-native dump/restore in addition to filesystem backup.
 - For host paths such as Nextcloud `NEXTCLOUD_DATADIR`, verify the path is intentionally absolute and exists on the VPS; do not copy it into the Git clone.
