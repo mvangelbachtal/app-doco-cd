@@ -4,3 +4,5 @@
 secrets.env
 secrets.env.*
 !secrets.env.example
+data/
+doco-cd.private-key.pem

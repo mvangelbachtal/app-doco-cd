@@ -33,12 +33,14 @@ services:
       DOCKER_HOST: tcp://dockerproxy:2375
       POLL_CONFIG_FILE: /config/poll-config.yml
       PASS_ENV: "true"
+      GITHUB_APP_PRIVATE_KEY_FILE: /run/secrets/doco-cd.private-key.pem
       VIRTUAL_HOST: ${DOCO_CD_HOST:-doco-cd.mv-angelbachtal.de}
       VIRTUAL_PORT: 80
       LETSENCRYPT_HOST: ${DOCO_CD_HOST:-doco-cd.mv-angelbachtal.de}
     volumes:
-      - /opt/doco-cd/data:/data
+      - ./data:/data
       - ./poll-config.yml:/config/poll-config.yml:ro
+      - ./doco-cd.private-key.pem:/run/secrets/doco-cd.private-key.pem:ro
     networks:
       - docker-api
       - proxy
