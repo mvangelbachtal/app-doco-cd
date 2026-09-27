@@ -40,9 +40,9 @@ services:
       VIRTUAL_PORT: 80
       LETSENCRYPT_HOST: ${DOCO_CD_HOST:-doco-cd.mv-angelbachtal.de}
     volumes:
-      - ./data:/data
+      - data:/data
       - ./poll-config.yml:/config/poll-config.yml:ro
-      - ./doco-cd.private-key.pem:/run/secrets/doco-cd.private-key.pem:ro
+      - /opt/doco-cd/doco-cd.private-key.pem:/run/secrets/doco-cd.private-key.pem:ro
     networks:
       - docker-api
       - proxy
@@ -60,3 +60,7 @@ networks:
     internal: true
   proxy:
     external: true
+
+volumes:
+  data:
+    name: doco-cd_data

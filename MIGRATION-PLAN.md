@@ -45,7 +45,7 @@ The controller repository contains only Doco-CD's Compose file, poll configurati
 - Use a pinned Doco-CD image version; upgrade deliberately.
 - Enable `SELF_UPDATE_ENABLED=true` on the controller once its repository describes the running Compose project. Because this stack uses `container_name: doco-cd`, use `SELF_UPDATE_STRATEGY=applier`; `scale_out` cannot create a second container with the same name.
 - Keep the controller repository in `poll-config.yml` with a normal fallback interval. Self-updates cause a brief restart; failed updates should roll back through Doco-CD's journaled applier flow.
-- Never change the controller data bind mount during self-update. Back up `/opt/doco-cd/data` before changing its path or volume configuration.
+- Keep the controller data in the explicit named volume `doco-cd_data`; self-updates must not change its name or configuration. The GitHub App key is an intentional absolute host bind mount at `/opt/doco-cd/doco-cd.private-key.pem`, outside the Git clone.
 - Configure `POLL_CONFIG_FILE` with every app repository and `interval: 300` or longer as fallback.
 - Start with `interval: 0` for an app until its first cutover is complete.
 - Use GitHub webhooks as the primary trigger once the reverse proxy route works. Keep polling enabled as a fallback.
@@ -92,6 +92,7 @@ Perform one app at a time during a maintenance window.
 - Never remove volumes during migration. Image pruning can be disabled during initial cutover.
 - For databases, prefer a database-native dump/restore in addition to filesystem backup.
 - For host paths such as Nextcloud `NEXTCLOUD_DATADIR`, verify the path is intentionally absolute and exists on the VPS; do not copy it into the Git clone.
+- For the Doco-CD controller, migrate the old `/opt/doco-cd/data` bind mount into `doco-cd_data` before enabling this Compose change; keep `/opt/doco-cd/doco-cd.private-key.pem` readable by the container user and never put it in Git.
 
 ## Rollback
 
