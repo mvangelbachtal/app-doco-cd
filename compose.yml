@@ -20,7 +20,7 @@ services:
       - docker-api
 
   doco-cd:
-    image: ghcr.io/kimdre/doco-cd:0.121.0
+    image: ghcr.io/kimdre/doco-cd:0.122.0
     container_name: doco-cd
     restart: unless-stopped
     depends_on:
@@ -33,6 +33,8 @@ services:
       DOCKER_HOST: tcp://dockerproxy:2375
       POLL_CONFIG_FILE: /config/poll-config.yml
       PASS_ENV: "true"
+      SELF_UPDATE_ENABLED: "true"
+      SELF_UPDATE_STRATEGY: applier
       GITHUB_APP_PRIVATE_KEY_FILE: /run/secrets/doco-cd.private-key.pem
       VIRTUAL_HOST: ${DOCO_CD_HOST:-doco-cd.mv-angelbachtal.de}
       VIRTUAL_PORT: 80
