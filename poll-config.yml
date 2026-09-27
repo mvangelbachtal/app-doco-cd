@@ -3,7 +3,7 @@
   interval: 0
 - url: https://github.com/mvangelbachtal/app-monitoring.git
   reference: main
-  interval: 0
+  interval: 300
 - url: https://github.com/mvangelbachtal/app-nginx-letsencrypt-proxy.git
   reference: main
   interval: 0
