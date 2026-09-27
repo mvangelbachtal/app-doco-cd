@@ -37,7 +37,7 @@ services:
       VIRTUAL_PORT: 80
       LETSENCRYPT_HOST: ${DOCO_CD_HOST:-doco-cd.mv-angelbachtal.de}
     volumes:
-      - doco-cd-data:/data
+      - /opt/doco-cd/data:/data
       - ./poll-config.yml:/config/poll-config.yml:ro
     networks:
       - docker-api
@@ -50,9 +50,6 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-
-volumes:
-  doco-cd-data:
 
 networks:
   docker-api:
