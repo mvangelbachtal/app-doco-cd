@@ -9,10 +9,10 @@
   interval: 0
 - url: https://github.com/mvangelbachtal/app-plik.git
   reference: main
-  interval: 0
+  interval: 300
 - url: https://github.com/mvangelbachtal/app-privatebin.git
   reference: main
-  interval: 0
+  interval: 300
 - url: https://github.com/mvangelbachtal/app-umami.git
   reference: main
   interval: 0
