@@ -1,36 +1,13 @@
 services:
-  dockerproxy:
-    image: tecnativa/docker-socket-proxy:latest
-    restart: unless-stopped
-    environment:
-      PING: 1
-      VERSION: 1
-      INFO: 1
-      EVENTS: 1
-      CONTAINERS: 1
-      IMAGES: 1
-      NETWORKS: 1
-      VOLUMES: 1
-      DISTRIBUTION: 1
-      POST: 1
-      DELETE: 1
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - docker-api
-
   doco-cd:
     image: ghcr.io/kimdre/doco-cd:0.122.0
     container_name: doco-cd
     restart: unless-stopped
-    depends_on:
-      - dockerproxy
     env_file:
       - path: secrets.env
         required: false
     environment:
       TZ: Europe/Berlin
-      DOCKER_HOST: tcp://dockerproxy:2375
       POLL_CONFIG_FILE: /config/poll-config.yml
       PASS_ENV: "true"
       SELF_UPDATE_ENABLED: "true"
@@ -43,8 +20,8 @@ services:
       - data:/data
       - ./poll-config.yml:/config/poll-config.yml:ro
       - /opt/doco-cd/doco-cd.private-key.pem:/run/secrets/doco-cd.private-key.pem:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - docker-api
       - proxy
     cap_drop:
       - ALL
@@ -56,8 +33,6 @@ services:
       retries: 3
 
 networks:
-  docker-api:
-    internal: true
   proxy:
     external: true
 
