@@ -19,9 +19,11 @@ Use `secrets.env` as the VPS-only file name. It is not a Doco-CD-only convention
 - Store `/opt/doco-cd/secrets.env` only on the VPS; set mode `600`.
 - Put `GIT_ACCESS_TOKEN`, `WEBHOOK_SECRET`, and app variables there.
 - Set `PASS_ENV=true` on Doco-CD so app Compose interpolation receives those variables.
+- `PASS_ENV` is global: every deployment can see every controller environment variable. Use app-prefixed names such as `UMAMI_APP_SECRET` and `MONITORING_UMAMI_DB_PASSWORD`; prefixes prevent collisions, not visibility.
 - Commit `secrets.env.example` with variable names and safe defaults only.
 - Do not commit real `.env`, `secrets.env`, certificates, database files, or backups.
 - If an app uses a service-level Compose `env_file`, handle it explicitly. Doco-CD's `PASS_ENV` supplies interpolation variables; it does not create a missing file inside the cloned repository. Either remove that `env_file` in favor of explicit environment entries, or copy the required secret file into the managed clone during cutover and document that exception.
+- Keep nonsecret values in tracked Compose files or `.doco-cd.yml` `environment`; do not put values such as `VIRTUAL_HOST` or `LETSENCRYPT_HOST` in `secrets.env`.
 
 ## Repository preparation
 
