@@ -19,3 +19,6 @@
 - url: https://github.com/mvangelbachtal/music-together.git
   reference: main
   interval: 0
+- url: https://github.com/mvangelbachtal/app-nextcloud-aio.git
+  reference: main
+  interval: 0
