@@ -6,7 +6,7 @@
   interval: 300
 - url: https://github.com/mvangelbachtal/app-nginx-letsencrypt-proxy.git
   reference: main
-  interval: 0
+  interval: 300
 - url: https://github.com/mvangelbachtal/app-plik.git
   reference: main
   interval: 300
