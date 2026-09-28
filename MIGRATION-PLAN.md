@@ -89,6 +89,7 @@ Perform one app at a time during a maintenance window.
 - Relative bind mounts resolve below Doco-CD's managed clone, not the old checkout, and may point at a new revision-specific directory after an update.
 - Prefer named volumes for writable state; migrate old bind-mounted data into the named volume before the first production deployment.
 - Keep read-only repository configuration as bind mounts when it should change with Git commits.
+- The nginx proxy is an explicit exception: its root `html/` and `vhost.d/` directories are Git-versioned bind mounts by request. Because they are writable and live in Doco-CD's managed clone, runtime-generated changes may not survive a new clone/revision; keep authoritative config changes committed and back up these directories before changing the deployment source.
 - Keep intentional absolute host paths, such as Nextcloud's data directory or Docker sockets, as bind mounts and document their host-side prerequisites.
 - Do not convert read-only repository configuration binds such as `prometheus.yml`, `promtail.yml`, Grafana provisioning, `plikd.cfg`, `conf.php`, or `nginx.tmpl`; those should follow Git revisions.
 - Never remove volumes during migration. Image pruning can be disabled during initial cutover.
