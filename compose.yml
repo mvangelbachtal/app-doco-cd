@@ -42,6 +42,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - proxy
+      - prometheus
     cap_drop:
       - ALL
     healthcheck:
@@ -52,6 +53,8 @@ services:
       retries: 3
 
 networks:
+  prometheus:
+    external: true
   proxy:
     external: true
 
