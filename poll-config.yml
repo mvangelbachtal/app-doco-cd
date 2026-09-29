@@ -1,6 +1,6 @@
 - url: https://github.com/mvangelbachtal/app-authentik.git
   reference: main
-  interval: 0
+  interval: 300
 - url: https://github.com/mvangelbachtal/app-monitoring.git
   reference: main
   interval: 300
