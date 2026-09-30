@@ -3,6 +3,9 @@ services:
     image: ghcr.io/kimdre/doco-cd:0.122.1
     container_name: doco-cd
     restart: unless-stopped
+    depends_on:
+      apprise:
+        condition: service_healthy
     environment:
       TZ: Europe/Berlin
       DOCO_CD_HOST: ${DOCO_CD_HOST:-doco-cd.mv-angelbachtal.de}
@@ -31,6 +34,10 @@ services:
       NEXTCLOUD_AIO_REDIS_PASSWORD: ${NEXTCLOUD_AIO_REDIS_PASSWORD:-}
       NEXTCLOUD_AIO_TALK_INTERNAL_SECRET: ${NEXTCLOUD_AIO_TALK_INTERNAL_SECRET:-}
       NEXTCLOUD_AIO_WHITEBOARD_SECRET: ${NEXTCLOUD_AIO_WHITEBOARD_SECRET:-}
+      APPRISE_API_URL: http://apprise:8000/notify
+      APPRISE_NOTIFY_URLS: ${APPRISE_NOTIFY_URLS:-}
+      APPRISE_NOTIFY_LEVEL: ${APPRISE_NOTIFY_LEVEL:-success}
+      APPRISE_NOTIFY_REPEAT_INTERVAL: ${APPRISE_NOTIFY_REPEAT_INTERVAL:-1h}
       POLL_CONFIG_FILE: /config/poll-config.yml
       PASS_ENV: "true"
       SELF_UPDATE_ENABLED: "true"
@@ -46,6 +53,7 @@ services:
     networks:
       - proxy
       - prometheus
+      - notifications
     cap_drop:
       - ALL
     healthcheck:
@@ -54,12 +62,28 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+  apprise:
+    image: caronc/apprise:2.0.0
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Berlin
+      APPRISE_WORKER_COUNT: 1
+    networks:
+      - notifications
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/status >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 
 networks:
   prometheus:
     external: true
   proxy:
     external: true
+  notifications:
+    driver: bridge
 
 volumes:
   data:
