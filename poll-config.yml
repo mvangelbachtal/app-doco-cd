@@ -21,7 +21,7 @@
   interval: 300
 - url: https://github.com/mvangelbachtal/app-nextcloud-aio.git
   reference: main
-  interval: 0
+  interval: 300
 - url: https://github.com/mvangelbachtal/app-doco-cd.git
   reference: main
   interval: 300
