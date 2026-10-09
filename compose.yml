@@ -59,12 +59,6 @@ services:
       - notifications
     cap_drop:
       - ALL
-    healthcheck:
-      test: ["CMD", "/doco-cd", "healthcheck"]
-      start_period: 15s
-      interval: 30s
-      timeout: 5s
-      retries: 3
   apprise:
     image: caronc/apprise:2.0.1
     restart: unless-stopped
