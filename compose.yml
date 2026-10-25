@@ -60,7 +60,7 @@ services:
     cap_drop:
       - ALL
   apprise:
-    image: caronc/apprise:2.0.1
+    image: caronc/apprise:2.0.2
     restart: unless-stopped
     environment:
       TZ: Europe/Berlin
