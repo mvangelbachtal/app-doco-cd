@@ -43,8 +43,7 @@ services:
       APPRISE_NOTIFY_REPEAT_INTERVAL: ${APPRISE_NOTIFY_REPEAT_INTERVAL:-1h}
       POLL_CONFIG_FILE: /config/poll-config.yml
       PASS_ENV: "true"
-      SELF_UPDATE_ENABLED: "true"
-      SELF_UPDATE_STRATEGY: applier
+      SELF_UPDATE_ENABLED: "false"
       VIRTUAL_HOST: ${DOCO_CD_HOST:-doco-cd.mv-angelbachtal.de}
       VIRTUAL_PORT: 80
       LETSENCRYPT_HOST: ${DOCO_CD_HOST:-doco-cd.mv-angelbachtal.de}

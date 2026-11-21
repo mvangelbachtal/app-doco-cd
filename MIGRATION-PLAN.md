@@ -42,11 +42,10 @@ Use `secrets.env` as the VPS-only file name. It is not a Doco-CD-only convention
 The controller repository contains only Doco-CD's Compose file, poll configuration, examples, and operational documentation. The VPS-only `secrets.env` is ignored.
 
 - Mount the Docker socket directly initially, or use a socket proxy with only the endpoints required for Compose deployment.
-- Use a pinned Doco-CD image version; upgrade deliberately.
-- Enable `SELF_UPDATE_ENABLED=true` on the controller once its repository describes the running Compose project. Because this stack uses `container_name: doco-cd`, use `SELF_UPDATE_STRATEGY=applier`; `scale_out` cannot create a second container with the same name.
-- Keep the controller repository in `poll-config.yml` with a normal fallback interval. Self-updates cause a brief restart; failed updates should roll back through Doco-CD's journaled applier flow.
-- `SELF_UPDATE_ENABLED` enables self-update; the controller repository still needs a poll or webhook entry to deliver changes. Do not use a clone-local `secrets.env` service `env_file`: self-deployed clones do not contain that ignored file. Start the initial stack with `docker compose --env-file secrets.env up -d`; subsequent deployments receive the listed variables through `PASS_ENV`.
-- Keep the controller data in the explicit named volume `doco-cd_data`; self-updates must not change its name or configuration. The GitHub App key is an intentional absolute host bind mount at `/opt/doco-cd/doco-cd.private-key.pem`, outside the Git clone.
+- Manage the controller manually from a stable VPS checkout. Keep `SELF_UPDATE_ENABLED=false`, exclude its repository from `poll-config.yml`, and disable any GitHub webhook for that repository.
+- Use a pinned Doco-CD image version; review and upgrade it deliberately. Other application repositories remain automatically deployed.
+- Use `/opt/doco-cd/secrets.env` with Compose for every manual deployment. `PASS_ENV` supplies the listed variables to application deployments.
+- Keep the controller data in the explicit named volume `doco-cd_data`. The GitHub App key is an intentional absolute host bind mount at `/opt/doco-cd/doco-cd.private-key.pem`, outside the Git clone.
 - This single-VPS setup mounts `/var/run/docker.sock` directly into Doco-CD for simplicity. This grants Doco-CD full Docker control; use a socket proxy or separate host if stronger isolation becomes necessary.
 - Configure `POLL_CONFIG_FILE` with every app repository and `interval: 300` or longer as fallback.
 - Start with `interval: 0` for an app until its first cutover is complete.
@@ -54,6 +53,23 @@ The controller repository contains only Doco-CD's Compose file, poll configurati
 - Webhook URL: `https://<controller-host>/v1/webhook`; use HTTPS and a shared `WEBHOOK_SECRET`.
 - Create a read-only GitHub token scoped to the repositories deployed by this VPS.
 - Never expose Docker or SSH credentials to GitHub. GitHub only sends the signed webhook request.
+
+### Manual controller updates
+
+For the initial transition, disable the controller repository's webhook and stop `doco-cd` before publishing these changes, so the existing controller cannot deploy them itself. Check for an in-progress deployment first. Stopping the controller does not stop the applications it manages.
+
+Confirm the running container's Compose project is `doco-cd` with `docker inspect --format '{{ index .Config.Labels "com.docker.compose.project" }}' doco-cd`. From a stable VPS checkout, not a Doco-CD artifact directory, pull the reviewed changes and run:
+
+```sh
+git pull --ff-only
+docker compose --project-name doco-cd --env-file /opt/doco-cd/secrets.env config --quiet
+docker compose --project-name doco-cd --env-file /opt/doco-cd/secrets.env pull
+docker compose --project-name doco-cd --env-file /opt/doco-cd/secrets.env up -d
+docker compose --project-name doco-cd --env-file /opt/doco-cd/secrets.env ps
+docker logs --tail 100 doco-cd
+```
+
+Verify the controller is healthy, its poll-config bind mount points to the stable checkout, and another app still polls. For future updates, review the image and configuration changes, then repeat these commands. Do not remove the data volume or use `docker compose down -v`.
 
 ## Per-app cutover
 
@@ -95,7 +111,7 @@ Perform one app at a time during a maintenance window.
 - Never remove volumes during migration. Image pruning can be disabled during initial cutover.
 - For databases, prefer a database-native dump/restore in addition to filesystem backup.
 - For host paths such as Nextcloud `NEXTCLOUD_DATADIR`, verify the path is intentionally absolute and exists on the VPS; do not copy it into the Git clone.
-- For the Doco-CD controller, migrate the old `/opt/doco-cd/data` bind mount into `doco-cd_data` before enabling this Compose change; keep `/opt/doco-cd/doco-cd.private-key.pem` readable by the container user and never put it in Git.
+- For the Doco-CD controller, preserve `doco-cd_data`; keep `/opt/doco-cd/doco-cd.private-key.pem` readable by the container user and never put it in Git.
 
 ## Rollback
 
