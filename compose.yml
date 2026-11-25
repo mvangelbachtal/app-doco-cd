@@ -56,7 +56,7 @@ services:
     cap_drop:
       - ALL
   webhook-gateway:
-    image: node:22.22.1-alpine
+    image: node:26.13.1-alpine
     restart: unless-stopped
     user: node
     read_only: true
