@@ -39,7 +39,7 @@ Use `secrets.env` as the VPS-only file name. It is not a Doco-CD-only convention
 
 ## Doco-CD controller
 
-The controller repository contains only Doco-CD's Compose file, poll configuration, examples, and operational documentation. The VPS-only `secrets.env` is ignored.
+The controller repository contains Doco-CD's Compose file, webhook gateway, poll configuration, examples, and operational documentation. The VPS-only `secrets.env` is ignored.
 
 - Mount the Docker socket directly initially, or use a socket proxy with only the endpoints required for Compose deployment.
 - Manage the controller manually from a stable VPS checkout. Keep `SELF_UPDATE_ENABLED=false`, exclude its repository from `poll-config.yml`, and disable any GitHub webhook for that repository.
@@ -49,8 +49,10 @@ The controller repository contains only Doco-CD's Compose file, poll configurati
 - This single-VPS setup mounts `/var/run/docker.sock` directly into Doco-CD for simplicity. This grants Doco-CD full Docker control; use a socket proxy or separate host if stronger isolation becomes necessary.
 - Configure `POLL_CONFIG_FILE` with every app repository and `interval: 300` or longer as fallback.
 - Start with `interval: 0` for an app until its first cutover is complete.
-- Use GitHub webhooks as the primary trigger once the reverse proxy route works. Keep polling enabled as a fallback.
-- Webhook URL: `https://<controller-host>/v1/webhook`; use HTTPS and a shared `WEBHOOK_SECRET`.
+- Use GitHub webhooks as the primary trigger and keep polling enabled as a fallback. The `webhook-gateway` owns the reverse-proxy host and forwards only GitHub `push` events with a changed, non-deleted `refs/heads/main` revision to Doco-CD. Other event types and branches are acknowledged without a deployment. Configure repository webhooks for push events only; the gateway also protects against unwanted create events.
+- Webhook URL: `https://<controller-host>/v1/webhook`; use HTTPS and a shared `WEBHOOK_SECRET`. The gateway preserves the original body and signature; Doco-CD still verifies the signature. Keep the secret set, and do not expose Doco-CD directly through another route. The gateway rejects non-canonical URL paths and payloads over 10 MiB.
+- Poll references select the polled branch; they do not restrict webhook branches. Deployment configs can override the source reference, so do not set a non-main `reference` in app `.doco-cd.yml` files. Manual API operations and Docker-network access are not filtered by this webhook policy.
+- Configure only one webhook delivery source per app. The gateway does not deduplicate separate deliveries of the same push; Doco-CD performs change detection, but concurrent jobs and retries may still occur. Investigate duplicate job IDs in Doco-CD logs and GitHub App and repository webhook delivery history.
 - Create a read-only GitHub token scoped to the repositories deployed by this VPS.
 - Never expose Docker or SSH credentials to GitHub. GitHub only sends the signed webhook request.
 
@@ -69,7 +71,7 @@ docker compose --project-name doco-cd --env-file /opt/doco-cd/secrets.env ps
 docker logs --tail 100 doco-cd
 ```
 
-Verify the controller is healthy, its poll-config bind mount points to the stable checkout, and another app still polls. For future updates, review the image and configuration changes, then repeat these commands. Do not remove the data volume or use `docker compose down -v`.
+Verify the controller and gateway are running, the poll-config and gateway script bind mounts point to the stable checkout, and another app still polls. Check the proxy routes the controller host to `webhook-gateway`, not directly to `doco-cd`. Send a signed test push to a non-main branch and confirm no Doco-CD job is created, then verify a main push deploys and polling still works. For future updates, review the image and configuration changes, then repeat these commands. Do not remove the data volume or use `docker compose down -v`.
 
 ## Per-app cutover
 

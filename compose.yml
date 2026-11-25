@@ -44,18 +44,34 @@ services:
       POLL_CONFIG_FILE: /config/poll-config.yml
       PASS_ENV: "true"
       SELF_UPDATE_ENABLED: "false"
-      VIRTUAL_HOST: ${DOCO_CD_HOST:-doco-cd.mv-angelbachtal.de}
-      VIRTUAL_PORT: 80
-      LETSENCRYPT_HOST: ${DOCO_CD_HOST:-doco-cd.mv-angelbachtal.de}
     volumes:
       - data:/data
       - ./poll-config.yml:/config/poll-config.yml:ro
       - /opt/doco-cd/doco-cd.private-key.pem:/run/secrets/doco-cd.private-key.pem:ro
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - proxy
       - prometheus
       - notifications
+      - controller
+    cap_drop:
+      - ALL
+  webhook-gateway:
+    image: node:22.22.1-alpine
+    restart: unless-stopped
+    user: node
+    read_only: true
+    environment:
+      VIRTUAL_HOST: ${DOCO_CD_HOST:-doco-cd.mv-angelbachtal.de}
+      VIRTUAL_PORT: 8080
+      LETSENCRYPT_HOST: ${DOCO_CD_HOST:-doco-cd.mv-angelbachtal.de}
+    volumes:
+      - ./webhook-gateway.js:/app/webhook-gateway.js:ro
+    command: ["node", "/app/webhook-gateway.js"]
+    expose:
+      - "8080"
+    networks:
+      - proxy
+      - controller
     cap_drop:
       - ALL
   apprise:
@@ -79,6 +95,8 @@ networks:
   proxy:
     external: true
   notifications:
+    driver: bridge
+  controller:
     driver: bridge
 
 volumes:
