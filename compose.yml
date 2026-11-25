@@ -12,6 +12,7 @@ services:
       GITHUB_APP_ID: ${GITHUB_APP_ID}
       GITHUB_APP_PRIVATE_KEY_FILE: ${GITHUB_APP_PRIVATE_KEY_FILE:-/run/secrets/doco-cd.private-key.pem}
       GIT_ACCESS_TOKEN: ${GIT_ACCESS_TOKEN:-}
+      GIT_AUTH_DOMAINS: "- domains: [github.com]"
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:-}
       GIT_COMMIT_STATUS: ${GIT_COMMIT_STATUS:-true}
       API_KEYS: ${API_KEYS:-}
